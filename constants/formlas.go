@@ -1,5 +1,5 @@
 package constants
 
 const (
-	v = 1
+	Velocity = 1 // 1 m/s
 )

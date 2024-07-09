@@ -1,11 +1,14 @@
 package service
 
 import (
+	"carrier/constants"
 	"carrier/model/carrier"
 	"errors"
 	"fmt"
+	"github.com/madflojo/tasks"
 	"gorm.io/gorm"
 	"math"
+	"time"
 )
 
 func InitializeCarriers() error {
@@ -57,5 +60,27 @@ func MinFinder(leastDistance float64, distance float64) float64 {
 		return distance
 	} else {
 		return leastDistance
+	}
+}
+
+func AverageCounterFinder(source, destination, distance float64) float64 {
+	T := (constants.Velocity / distance)
+	return (destination - source) / T
+}
+
+func CarrierTaskMaker(counterX, counterY float64) error {
+	// Start the Scheduler
+	scheduler := tasks.New()
+	defer scheduler.Stop()
+
+	// Add a task
+	id, err := scheduler.Add(&tasks.Task{
+		Interval: 60 * time.Second,
+		TaskFunc: func() error {
+
+		},
+	})
+	if err != nil {
+		// Do Stuff
 	}
 }
