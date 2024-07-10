@@ -2,7 +2,7 @@ package database
 
 import (
 	"carrier/config"
-	"carrier/model/entity"
+	"carrier/model/carrier"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -34,10 +34,11 @@ func ConnectDB() {
 	}
 
 	fmt.Println("connection opened to database...")
-	err = DB.AutoMigrate(&entity.Carrier{})
+	err = DB.AutoMigrate(&carrier.Carrier{})
 	if err != nil {
 		panic(err.Error())
 		return
 	}
+
 	fmt.Println("database migrated")
 }
