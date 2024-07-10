@@ -10,5 +10,5 @@ func SetupRoutes(app *fiber.App) {
 
 	// Carrier
 	carrier := api.Group("carrier")
-	carrier.Post("carrier/", controller.OrderHandler())
+	carrier.Post("/", controller.OrderHandler)
 }
