@@ -4,7 +4,6 @@ import (
 	"carrier/database"
 	"carrier/router"
 	"carrier/service"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )
@@ -18,15 +17,15 @@ func main() {
 		AppName:       "Carriers",
 	})
 
-	database.ConnectDB()
-
-	if err := service.InitializeCarriers(); err != nil {
-		fmt.Println("erroooooooor")
-		panic(err.Error())
-		return
-	}
+	database.DB = database.ConnectDB()
 
 	router.SetupRoutes(app)
+
+	err := service.InitializeCarriers()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
 	log.Fatal(app.Listen(":3000"))
 }

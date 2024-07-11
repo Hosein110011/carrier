@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-// connect to db and auto make migration
-func ConnectDB() {
+// ConnectDB connect to db and auto make migration
+func ConnectDB() *gorm.DB {
 	var err error
 	p := config.Config("DB_PORT")
 	port, err := strconv.ParseUint(p, 10, 32)
@@ -37,8 +37,8 @@ func ConnectDB() {
 	err = DB.AutoMigrate(&carrier.Carrier{})
 	if err != nil {
 		panic(err.Error())
-		return
+		return nil
 	}
-
-	fmt.Println("database migrated")
+	fmt.Println("database migrated", DB)
+	return DB
 }

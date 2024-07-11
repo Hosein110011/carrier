@@ -2,19 +2,22 @@ package service
 
 import (
 	"carrier/constants"
-	"carrier/database"
 	"carrier/model/carrier"
+	"carrier/repository"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
+	//"github.com/madflojo/tasks"
 	"gorm.io/gorm"
 	"math"
+	//"time"
 )
 
 func InitializeCarriers() error {
-	db := database.DB
 	var id int = 1
-	var instance = carrier.Carrier{}
-	if _, err := instance.GetById(id, db); err != nil {
+	if _, err := repository.GetById(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			for i, _ := range []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1} {
 				var newCarrier = carrier.Carrier{
@@ -22,8 +25,7 @@ func InitializeCarriers() error {
 					Y:      0,
 					IsBusy: false,
 				}
-				err := newCarrier.Create(&newCarrier, db)
-				if err != nil {
+				if err := repository.Create(&newCarrier); err != nil {
 					return err
 				}
 				fmt.Println(i)
@@ -38,9 +40,7 @@ func InitializeCarriers() error {
 }
 
 func GetAvailableCarriers() ([]carrier.Carrier, error) {
-	db := database.DB
-	var instance = carrier.Carrier{}
-	if carriers, err := instance.GetFreeCarriers(db); err != nil {
+	if carriers, err := repository.GetFreeCarriers(); err != nil {
 		return nil, err
 	} else {
 		return carriers, nil
@@ -48,19 +48,18 @@ func GetAvailableCarriers() ([]carrier.Carrier, error) {
 }
 
 func UpdateCarrier(carrierID int, carrier *carrier.Carrier) error {
-	db := database.DB
-	if err := carrier.Update(carrierID, carrier, db); err != nil {
+	if err := repository.Update(carrierID, carrier); err != nil {
 		return err
 	}
 	return nil
 }
 
-func DistanceMeter(xs float64, ys float64, xd float64, yd float64) float64 {
-	distance := math.Sqrt(math.Pow((xd-xs), 2) + math.Pow((yd-ys), 2))
+func GetDistance(xs float64, ys float64, xd float64, yd float64) float64 {
+	distance := math.Sqrt(math.Pow(xd-xs, 2) + math.Pow(yd-ys, 2))
 	return distance
 }
 
-func MinFinder(leastDistance float64, distance float64) float64 {
+func FindMinDistance(leastDistance float64, distance float64) float64 {
 	if distance < leastDistance {
 		return distance
 	} else {
@@ -68,26 +67,56 @@ func MinFinder(leastDistance float64, distance float64) float64 {
 	}
 }
 
-func AverageCounterFinder(source, destination, distance float64) float64 {
-	T := (constants.Velocity / distance)
+func GetTotalTime(distance float64) float64 {
+	T := constants.Velocity / distance
+	return T
+}
+
+func GetAverageCounter(source, destination, distance, T float64) float64 {
 	return (destination - source) / T
 }
 
-func CarrierTaskMaker(counterX, counterY float64) error {
-	//// Start the Scheduler
-	//scheduler := tasks.New()
-	//defer scheduler.Stop()
-	//
-	//// Add a task
-	//id, err := scheduler.Add(&tasks.Task{
-	//	Interval: 60 * time.Second,
-	//	TaskFunc: func() error {
-	//
-	//	},
-	//})
-	//if err != nil {
-	//	// Do Stuff
-	//}
-	var err error
-	return err
+func taskProcessor(selectedCarrier carrier.Carrier, counterX, counterY float64, totalTime float64) {
+	println("new task proccess started...")
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	defer wg.Done()
+	go func() {
+		fmt.Println("Goroutine")
+		fmt.Println("totalTime == ", totalTime)
+		for i := 0; i < int(math.Ceil(totalTime)); i++ {
+			i += 1
+			fmt.Println("i == ", i)
+			selectedCarrier.X += counterX
+			selectedCarrier.Y += counterY
+			selectedCarrier.IsBusy = true
+			err := UpdateCarrier(selectedCarrier.ID, &selectedCarrier)
+			if err != nil {
+				return
+			}
+			println("new X = ", selectedCarrier.X)
+			println("new Y = ", selectedCarrier.Y)
+			fmt.Println(i, "seconds passed...")
+			time.Sleep(1 * time.Second)
+		}
+		selectedCarrier.IsBusy = false
+		err := UpdateCarrier(selectedCarrier.ID, &selectedCarrier)
+		if err != nil {
+			return
+		}
+		println("Updated to false>>>>")
+	}()
+}
+
+func CarrierTaskMaker(counterX,
+	counterY float64,
+	selectedCarrier carrier.Carrier,
+	totalTime float64) error {
+
+	taskProcessor(selectedCarrier, counterX, counterY, totalTime)
+	selectedCarrier.IsBusy = false
+	if err := UpdateCarrier(selectedCarrier.ID, &selectedCarrier); err != nil {
+		return err
+	}
+	return nil
 }
