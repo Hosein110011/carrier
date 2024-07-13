@@ -38,6 +38,7 @@ func Update(id int, carrierInstance *carrier.Carrier) error {
 	} else if carrierRow.ID == 0 {
 		return errors.New("The carrier not found")
 	}
+	//fmt.Println("Update : ", carrierInstance)
 	db := database.DB
 	if err := db.Updates(&carrierInstance).Error; err != nil {
 		return err
