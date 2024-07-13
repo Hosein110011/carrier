@@ -33,6 +33,7 @@ func GetById(id int) (*carrier.Carrier, error) {
 }
 
 func Update(id int, carrierInstance *carrier.Carrier) error {
+	var carrierRow carrier.Carrier
 	if carrierRow, err := GetById(id); err != nil {
 		return err
 	} else if carrierRow.ID == 0 {
@@ -43,6 +44,21 @@ func Update(id int, carrierInstance *carrier.Carrier) error {
 	if err := db.Updates(&carrierInstance).Error; err != nil {
 		return err
 	}
+
+	logEntry := carrier.CarrierUpdateLog{
+		CarrierID: carrierRow.ID,
+		OldX:      carrierRow.X,
+		NewX:      carrierInstance.X,
+		OldY:      carrierRow.Y,
+		NewY:      carrierInstance.Y,
+		OldIsBusy: carrierRow.IsBusy,
+		NewIsBusy: carrierInstance.IsBusy,
+	}
+
+	if err := db.Create(&logEntry).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 

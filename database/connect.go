@@ -34,7 +34,7 @@ func ConnectDB() *gorm.DB {
 	}
 
 	fmt.Println("connection opened to database...")
-	err = DB.AutoMigrate(&carrier.Carrier{})
+	err = DB.AutoMigrate(&carrier.Carrier{}, &carrier.CarrierUpdateLog{})
 	if err != nil {
 		panic(err.Error())
 		return nil
